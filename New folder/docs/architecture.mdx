@@ -1,0 +1,205 @@
+# AgenticFlow — Architecture
+
+## Architecture Objective
+
+The architecture keeps the **business workflow stable** while making infrastructure providers replaceable.
+
+```mermaid
+flowchart TB
+    UI[Next.js Frontend] --> API[FastAPI API]
+    API --> GRAPH[LangGraph State Graph]
+
+    GRAPH --> SEARCH[Search Provider]
+    GRAPH --> DOMAIN[Domain Verification]
+    GRAPH --> REG[Registry Provider]
+    GRAPH --> NORM[Normalization]
+    GRAPH --> SCORE[Scoring]
+    GRAPH --> LLM[LLM Provider]
+    GRAPH --> HUMAN[Human Review]
+
+    GRAPH --> STORE[Storage Provider]
+```
+
+## Core Agent State
+
+The LangGraph state should contain structured information such as:
+
+```text
+Lead
+Research
+Sources
+Domain Verification
+Registry Verification
+Normalized Data
+Score
+Recommendation
+Proposal
+Run Metadata
+Human Review Status
+```
+
+Use typed Pydantic models for important boundaries.
+
+## LangGraph Pipeline
+
+```mermaid
+flowchart LR
+    S((START)) --> A[Input Lead]
+    A --> B[Company Search]
+    B --> C[Domain Verification]
+    C --> D[Registry Verification]
+    D --> E[Data Normalization]
+    E --> F[Lead Quality Scoring]
+    F --> G[Business Recommendation]
+    G --> H[Proposal Generation]
+    H --> I[Human Review]
+    I --> J((END))
+```
+
+## Provider Abstraction
+
+### Storage
+
+```text
+StorageProvider
+├── DemoStorageProvider
+└── SupabaseStorageProvider
+```
+
+### AI
+
+```text
+LLMProvider
+├── DemoLLMProvider
+└── Gemini / OpenAI / Anthropic / Other
+```
+
+### Search
+
+```text
+SearchProvider
+├── DemoSearchProvider
+├── DuckDuckGoSearchProvider
+└── TavilySearchProvider
+```
+
+### Registry
+
+```text
+RegistryProvider
+├── DemoRegistryProvider
+└── ExternalRegistryProvider
+```
+
+## Data Model
+
+Recommended tables:
+
+```text
+leads
+verifications
+sources
+agent_runs
+agent_run_nodes
+lead_scores
+proposals
+activity_events
+```
+
+```mermaid
+erDiagram
+    LEADS ||--o{ VERIFICATIONS : has
+    LEADS ||--o{ SOURCES : uses
+    LEADS ||--o{ AGENT_RUNS : executes
+    AGENT_RUNS ||--o{ AGENT_RUN_NODES : contains
+    LEADS ||--o{ LEAD_SCORES : receives
+    LEADS ||--o{ PROPOSALS : generates
+    LEADS ||--o{ ACTIVITY_EVENTS : creates
+```
+
+## Search and Verification
+
+Search is for discovery.
+
+Verification is for establishing a higher-trust result.
+
+```text
+Search
+  ↓
+Candidate evidence
+  ↓
+Source evaluation
+  ↓
+Official/authoritative source
+  ↓
+Verification status
+```
+
+Never treat a generic search result as proof of legal registration.
+
+## Structured Outputs
+
+```mermaid
+flowchart LR
+    A[LLM] --> B[Pydantic Validation]
+    B --> C{Valid?}
+    C -->|Yes| D[Continue Workflow]
+    C -->|No| E[Retry / Safe Failure]
+```
+
+## Operational Trace
+
+The UI may show:
+
+```text
+Lead received
+Search completed
+Domain checked
+Registry checked
+Data normalized
+Score calculated
+Proposal generated
+Human review pending
+```
+
+Do not expose hidden chain-of-thought.
+
+## Recommended API Surface
+
+```text
+GET    /health
+POST   /api/v1/leads
+GET    /api/v1/leads
+GET    /api/v1/leads/{lead_id}
+
+POST   /api/v1/leads/{lead_id}/run
+GET    /api/v1/agent-runs/{run_id}
+
+POST   /api/v1/leads/{lead_id}/verify
+POST   /api/v1/leads/{lead_id}/score
+
+POST   /api/v1/leads/{lead_id}/proposal
+GET    /api/v1/leads/{lead_id}/proposal
+PUT    /api/v1/leads/{lead_id}/proposal
+
+GET    /api/v1/activity
+```
+
+## Production Architecture
+
+```mermaid
+flowchart TB
+    USER[Sales Team / CRM] --> FE[Next.js / Vercel]
+    FE --> BE[FastAPI]
+    BE --> AGENT[LangGraph]
+
+    AGENT --> AI[Production LLM]
+    AGENT --> WEB[Search Provider]
+    AGENT --> VERIFY[Authoritative Verification]
+    AGENT --> DB[PostgreSQL / Supabase]
+
+    AGENT --> REVIEW[Human Review]
+    REVIEW --> CRM[CRM / Approved Action]
+```
+
+Start simple. Add queues, workers, Redis, enterprise identity, or other infrastructure only when actual client requirements justify them.

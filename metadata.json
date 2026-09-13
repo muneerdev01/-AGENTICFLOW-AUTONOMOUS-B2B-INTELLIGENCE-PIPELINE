@@ -1,0 +1,7 @@
+{
+  "name": "AgenticFlow",
+  "description": "Autonomous B2B Intelligence Pipeline - Research, Verify, Score, and Generate Proposals with human-in-the-loop validation.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
+

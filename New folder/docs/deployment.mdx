@@ -1,0 +1,172 @@
+# AgenticFlow — Deployment
+
+## Deployment Objective
+
+The demo is intentionally simple:
+
+```text
+Next.js → Vercel
+FastAPI + LangGraph → Render
+Providers → Demo implementations
+Storage → Demo storage
+```
+
+Production can progressively replace each demo component.
+
+## Local Development
+
+Frontend:
+
+```bash
+npm install
+npm run dev
+```
+
+Backend:
+
+```bash
+pip install -r requirements.txt
+uvicorn app.main:app --reload
+```
+
+## Vercel
+
+Deploy the Next.js application to Vercel.
+
+Example:
+
+```env
+NEXT_PUBLIC_DEMO_MODE=true
+NEXT_PUBLIC_API_URL=https://your-python-service.example.com
+```
+
+Do not place private AI, search, registry, or service secrets in `NEXT_PUBLIC_*` variables.
+
+## Render
+
+Deploy the Python FastAPI service separately.
+
+Start command:
+
+```bash
+uvicorn app.main:app --host 0.0.0.0 --port $PORT
+```
+
+The Python/LangGraph runtime should not be forced into the standard Next.js Vercel deployment.
+
+## Environment Strategy
+
+### Demo
+
+```env
+DEMO_MODE=true
+LLM_PROVIDER=demo
+SEARCH_PROVIDER=demo
+```
+
+### Production
+
+```env
+DEMO_MODE=false
+LLM_PROVIDER=<approved-provider>
+SEARCH_PROVIDER=<approved-provider>
+SUPABASE_URL=<production-url>
+```
+
+Real values must be stored in the hosting provider's secret/environment-variable system.
+
+## Fake Demo Credentials
+
+```env
+TAVILY_API_KEY=demo-tavily-key-2026
+GEMINI_API_KEY=demo-gemini-key-2026
+SUPABASE_SERVICE_ROLE_KEY=demo-service-role-key-2026
+PYTHON_SERVICE_API_KEY=demo-python-service-key-2026
+```
+
+These values are fake placeholders only.
+
+## Migration Path
+
+```mermaid
+flowchart LR
+    A[Portfolio Demo] --> B[Client Pilot]
+    B --> C[Production]
+    C --> D[Scale if Required]
+```
+
+### Portfolio Demo
+
+```text
+Vercel
++
+Render
++
+Demo AI
++
+Demo Search
++
+Demo Storage
+```
+
+### Client Pilot
+
+```text
+Vercel
++
+FastAPI
++
+Supabase/PostgreSQL
++
+Real AI
++
+Real Search
++
+One authoritative verification source
+```
+
+### Production
+
+```text
+Real infrastructure
++
+Authentication
++
+CRM
++
+Monitoring
++
+Security controls
++
+Approved integrations
+```
+
+## Scaling Principle
+
+Do not introduce Kafka, Kubernetes, Redis, Celery, or complex microservices merely for appearance.
+
+Evaluate first:
+
+- request volume
+- concurrent agent runs
+- latency
+- reliability
+- cost
+- compliance
+- data retention
+- integration requirements
+
+Then add infrastructure where it solves a measured problem.
+
+## Deployment Checklist
+
+- [ ] Frontend builds
+- [ ] Backend starts
+- [ ] CORS configured
+- [ ] Environment variables configured
+- [ ] Demo mode verified
+- [ ] Health endpoint works
+- [ ] Agent run completes
+- [ ] Proposal generation works
+- [ ] Human review works
+- [ ] Production secrets are not committed
